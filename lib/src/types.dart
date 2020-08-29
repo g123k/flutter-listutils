@@ -18,3 +18,8 @@ typedef LoadErrorBuilder = Widget Function(
   dynamic error,
   CustomListViewState listViewState,
 );
+
+typedef LoadingBuilder = Widget Function(
+  BuildContext context,
+  CustomListViewState listViewState,
+);

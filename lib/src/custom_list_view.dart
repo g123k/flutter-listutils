@@ -80,7 +80,7 @@ class CustomListView<T> extends StatefulWidget {
 
   /// Loading widget builder, displayed when data is fetching from [adapter] or
   /// [onLoadMore] is called
-  final WidgetBuilder loadingBuilder;
+  final LoadingBuilder loadingBuilder;
 
   /// Same as flutter's [ListView.builder] itemBuilder
   final ItemBuilder itemBuilder;
@@ -233,7 +233,8 @@ class CustomListViewState extends State<CustomListView> {
     if (_reachedToEnd || _loading || widget.adapter == null) return false;
     if (_loadDebounce?.isActive ?? false) _loadDebounce.cancel();
 
-    _loadDebounce = Timer(widget.debounceDuration, () async {
+    _loadDebounce =
+        Timer(offset == 0 ? Duration.zero : widget.debounceDuration, () async {
       _loading = true;
       _stateNotifier.value = _CLVState.loading;
 
@@ -319,7 +320,7 @@ class CustomListViewState extends State<CustomListView> {
       builder: (context, state, _) {
         if (state.status == _CLVStatus.loading &&
             widget.loadingBuilder != null) {
-          return widget.loadingBuilder(context);
+          return widget.loadingBuilder(context, this);
         } else if (state.status == _CLVStatus.error &&
             widget.errorBuilder != null) {
           return widget.errorBuilder(context, state.error, this);
