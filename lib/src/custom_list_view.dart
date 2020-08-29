@@ -156,8 +156,11 @@ class CustomListViewState extends State<CustomListView> {
   Timer _loadDebounce;
 
   bool get loading => _loading;
+
   bool get fetching => _fetching;
+
   bool get reachedToEnd => _reachedToEnd;
+
   int get offset => _offset;
 
   @override
@@ -250,7 +253,8 @@ class CustomListViewState extends State<CustomListView> {
   bool handleScrollNotification(ScrollNotification notification) {
     if (notification.depth <= 0 &&
         notification.metrics.maxScrollExtent - notification.metrics.pixels <
-            widget.distanceToLoadMore) {
+            widget.distanceToLoadMore &&
+        _stateNotifier.value.status != _CLVStatus.error) {
       loadMore();
     }
     return false;
