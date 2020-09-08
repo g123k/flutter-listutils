@@ -251,14 +251,11 @@ class CustomListViewState extends State<CustomListView> {
     return true;
   }
 
-  bool handleScrollNotification(ScrollNotification notification) {
-    if (notification.depth <= 0 &&
-        notification.metrics.maxScrollExtent - notification.metrics.pixels <
-            widget.distanceToLoadMore &&
+  bool handleScrollNotification(ScrollMetrics metrics) {
+    if (metrics.maxScrollExtent - metrics.pixels < widget.distanceToLoadMore &&
         _stateNotifier.value.status != _CLVStatus.error) {
       loadMore();
     }
-    return false;
   }
 
   /// Returns item count
@@ -384,10 +381,28 @@ class CustomListViewState extends State<CustomListView> {
 
   @override
   Widget build(BuildContext context) {
-    final Widget child = NotificationListener<ScrollNotification>(
-      onNotification: handleScrollNotification,
-      child: _buildList(context),
-    );
+    Widget child = _buildList(context);
+
+    // If the content is "shrinkWrap"-ed, we have to manually find the ancestor
+    // [Scrollable] widget
+    if (widget.shrinkWrap == true &&
+        widget.physics.runtimeType == NeverScrollableScrollPhysics) {
+      child = _Listener(
+          notifier: Scrollable.of(context).position,
+          onNewEvent: () {
+            handleScrollNotification(
+                Scrollable.of(context).position.copyWith());
+          },
+          child: child);
+    } else {
+      child = NotificationListener<ScrollNotification>(
+        onNotification: (ScrollNotification notification) {
+          handleScrollNotification(notification.metrics);
+          return false;
+        },
+        child: child,
+      );
+    }
 
     if (widget.disableRefresh) {
       return child;
@@ -397,5 +412,38 @@ class CustomListViewState extends State<CustomListView> {
       onRefresh: refresh,
       child: child,
     );
+  }
+}
+
+class _Listener extends StatefulWidget {
+  final ChangeNotifier notifier;
+  final Function() onNewEvent;
+  final Widget child;
+
+  _Listener({@required this.notifier, @required this.onNewEvent, this.child});
+
+  @override
+  _ListenerState createState() => _ListenerState();
+}
+
+class _ListenerState extends State<_Listener> {
+  @override
+  void initState() {
+    super.initState();
+    widget.notifier.addListener(onNewEvent);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return widget.child;
+  }
+
+  void onNewEvent() {
+    widget.onNewEvent();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 }
